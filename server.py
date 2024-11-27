@@ -1,5 +1,14 @@
 import socket
 
+def query_one():
+    return "You selected 1"
+
+def query_two():
+    return "You selected 2"
+
+def query_three():
+    return "You selected 3"
+
 def main(): 
     print("----------BEGINNING SERVER----------\n")
 
@@ -24,29 +33,34 @@ def main():
     print("CONNECTION!")
     print(f"Connected to ip and address {client_Address} \n")
 
-
     #try program
     try: 
 
+        #while client sent choice
         while True: 
-            #recieve message from client on 1024
-            message = client_Socket.recv(server_port)
 
-            #if there is no message then close connection
-            if not message: 
-                print("CLOSING CONNECTION DUE TO NO MORE DATA FROM CLIENT\n")
+            #recieve query choice from client from server_port
+            query_choice = client_Socket.recv(server_port)
+
+            #if there is no query_choice, close connection, break
+            if not query_choice: 
+                print("CLOSING CONNECTION DUE TO CLIENT INACTIVITY\n")
                 break
 
-            #decode message
-            message = message.decode('utf-8')
-            print(f"Received from client: {message}")
+            #if there is a quer_choice, decode and print the choice number
+            query_choice = int(query_choice.decode('utf-8'))
+            print("User chose: ", query_choice, "\n")
 
-            #new message turns message to all capitals 
-            new_message = message.upper()
-
-            #send new message to client
-            client_Socket.send(bytearray(str(new_message), encoding='utf-8'))
-            print(f"Sent back to client: {new_message} \n")
+            #get query depending on selection
+            if query_choice == 1: 
+                response = query_one()
+            elif query_choice == 2:
+                response = query_two()
+            elif query_choice == 3:
+                response = query_three()
+            
+            #send query result to client
+            client_Socket.send(bytearray(str(response), encoding='utf-8'))
             
     #if try does not work, throw exception
     except Exception as e: 
