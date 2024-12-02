@@ -6,7 +6,8 @@ def menu():
     print("1. What is the average moisture inside my kitchen fridge in the past three hours?")
     print("2. What is the average water consumption per cycle in my smart dishwasher?")
     print("3. Which device consumed more electricity among my loT devices (two refrigerators and a dishwasher)?")
-    print("4. Exit\n")
+    print("4. Exit")
+    print("5. Example query\n")
 
 
 def main():
@@ -16,11 +17,11 @@ def main():
         #User input server IP and Port
         print("INPUT SERVER INFORMATION")
 
-        server_ip = str(input("Enter the server IP address: "))
-        server_port = int(input("Enter the server port number: "))
+        #server_ip = str(input("Enter the server IP address: "))
+        #server_port = int(input("Enter the server port number: "))
 
-        #server_ip = "10.39.18.43"
-        #server_port = 1024
+        server_ip = "10.39.18.43"
+        server_port = 1024
 
         print()
         
@@ -56,7 +57,7 @@ def main():
                     break
 
                 #incorrect menu choice ( outside of 1 - 4 )
-                elif user_choice != 1 and user_choice != 2 and user_choice != 3: 
+                elif user_choice != 1 and user_choice != 2 and user_choice != 3 and user_choice != 5: 
                     print("Sorry, this query cannot be processed. Please select a query 1 - 3 or 4 to exit.")
 
                 #user chose a number between 1 - 3

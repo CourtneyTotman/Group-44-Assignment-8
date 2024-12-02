@@ -1,28 +1,77 @@
+from doctest import Example
 import socket
 import pymongo
 from pymongo import MongoClient
 
 CONNECTION_STRING = f"mongodb+srv://group44assignment8:group44assignment8@group44assignment8.ymcwi.mongodb.net/"
 DATABASE_NAME = "test"
-COLLECTION_NAME = "assignment8_virtual"
+COLLECTION_VIRTUAL= "assignment8_virtual"
+COLLECTION_METADATA = "assignment8_metadata"
 
 client = MongoClient(CONNECTION_STRING)
 db = client[DATABASE_NAME]
-collection = db[COLLECTION_NAME]
+virtual = db[COLLECTION_VIRTUAL]
+metadata = db[COLLECTION_METADATA]
 
-#def retrieve_all_data():
-#    results = collection.find({})
-#    print("\nAll documents in the collection: ")
-#    for doc in results:
-#        print(doc)
+class Node: 
+    def __init__(self, key):
+        self.left = None
+        self.right = None
+        self.val = key 
 
+class BinarySearchTree:
+    def __init__(self):
+        self.root = None 
+
+    def insert(self, key):
+        if self.root is None:
+            self.root = Node(key)
+        else:
+            self._insert_recursive(self.root, key)
+
+    def _insert_recursive(self, node, key):
+        if key < node.val: 
+            if node.left is None: 
+                node.left = Node(key)
+            else:
+                self._insert_recursive(node.left, key)
+        else: 
+            if node.right is None: 
+                node.right = Node(key)
+            else: 
+                self._insert_recursive(node.right, key)
+
+    def inorder(self):
+        elements = []
+        self._inorder_recursive(self.root, elements)
+        return elements
+
+    def _inorder_recursive(self, node, elements):
+        if node: 
+            self._inorder_recursive(node.left, elements)
+            elements.append(node.val)
+            self._inorder_recursive(node.right, elements)
+
+def example_query():
+    query = {"topic": "assignment8"}
+    documents = virtual.find(query)
+    bst = BinarySearchTree()
+    for document in documents:
+    # Extract the desired value (e.g., "Ammeter 2" from the payload)
+        ammeter_value = document['payload'].get('Ammeter 2')  # Change to another field if needed
+    
+        if ammeter_value is not None:
+        # Insert the extracted value into the BST
+            bst.insert(ammeter_value)
+
+    # Perform an inorder traversal to get the values in sorted order
+    sorted_values = bst.inorder()
+
+    # Print the sorted values
+    return("Sorted Ammeter 2 Values from 'assignment8' topic:", sorted_values)
 
 def query_one():
     return "You selected 1"
-#    query = {"length": "336"}
-#    documents = collection.find(query)
-#    print(documents)
-#    return str(documents)
 
 def query_two():
     return "You selected 2"
@@ -38,10 +87,10 @@ def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print("SERVER INFORMATION")
     #User will enter IP address and port
-    server_ip = str(input("Enter server IP Address: "))
-    server_port = int(input("Enter port: "))
-    #server_ip = "10.39.18.43"
-    #server_port = 1024
+    #server_ip = str(input("Enter server IP Address: "))
+    #server_port = int(input("Enter port: "))
+    server_ip = "10.39.18.43"
+    server_port = 1024
     
     print()
 
@@ -83,6 +132,8 @@ def main():
                 response = query_two()
             elif query_choice == 3:
                 response = query_three()
+            elif query_choice == 5: 
+                response = example_query()
             
             #send query result to client
             client_Socket.send(bytearray(str(response), encoding='utf-8'))
