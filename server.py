@@ -93,12 +93,14 @@ def main():
 
     #in the end, close client socket connection
     finally: 
+        client.close()
         client_Socket.close()
         print("CONNECTION CLOSED\n")
 
     #close server_socket
     server_socket.close()
     print("----------END OF SERVER----------\n")
+
 
 if __name__ == "__main__": 
     main()
