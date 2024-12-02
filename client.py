@@ -18,6 +18,10 @@ def main():
 
         server_ip = str(input("Enter the server IP address: "))
         server_port = int(input("Enter the server port number: "))
+
+        #server_ip = "10.39.18.43"
+        #server_port = 1024
+
         print()
         
         #create client socket
@@ -53,7 +57,7 @@ def main():
 
                 #incorrect menu choice ( outside of 1 - 4 )
                 elif user_choice != 1 and user_choice != 2 and user_choice != 3: 
-                    print("Incorrect selection, please try again")
+                    print("Sorry, this query cannot be processed. Please select a query 1 - 3 or 4 to exit.")
 
                 #user chose a number between 1 - 3
                 else:

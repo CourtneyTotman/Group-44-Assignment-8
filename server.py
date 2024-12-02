@@ -1,7 +1,28 @@
 import socket
+import pymongo
+from pymongo import MongoClient
+
+CONNECTION_STRING = f"mongodb+srv://group44assignment8:group44assignment8@group44assignment8.ymcwi.mongodb.net/"
+DATABASE_NAME = "test"
+COLLECTION_NAME = "assignment8_virtual"
+
+client = MongoClient(CONNECTION_STRING)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+
+#def retrieve_all_data():
+#    results = collection.find({})
+#    print("\nAll documents in the collection: ")
+#    for doc in results:
+#        print(doc)
+
 
 def query_one():
     return "You selected 1"
+#    query = {"length": "336"}
+#    documents = collection.find(query)
+#    print(documents)
+#    return str(documents)
 
 def query_two():
     return "You selected 2"
@@ -19,6 +40,9 @@ def main():
     #User will enter IP address and port
     server_ip = str(input("Enter server IP Address: "))
     server_port = int(input("Enter port: "))
+    #server_ip = "10.39.18.43"
+    #server_port = 1024
+    
     print()
 
     #bind server socket ip and port
@@ -54,6 +78,7 @@ def main():
             #get query depending on selection
             if query_choice == 1: 
                 response = query_one()
+                #response = retrieve_all_data()
             elif query_choice == 2:
                 response = query_two()
             elif query_choice == 3:
