@@ -7,7 +7,6 @@ def menu():
     print("2. What is the average water consumption per cycle in my smart dishwasher?")
     print("3. Which device consumed more electricity among my IoT devices (two refrigerators and a dishwasher)?")
     print("4. Exit")
-    print("5. Example query\n")
     print("---*---*---*---*---*---*---*---*---*---*---")
 
 def main():

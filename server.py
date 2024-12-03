@@ -50,24 +50,6 @@ class BinarySearchTree:
             result.extend(self.in_order_traversal(node.right))
         return result
 
-def example_query():
-    query = {"topic": "assignment8"}
-    documents = virtual_collection.find(query)
-    bst = BinarySearchTree()
-    for document in documents:
-    # Extract the desired value (e.g., "Ammeter 2" from the payload)
-        ammeter_value = document['payload'].get('Ammeter 2')  # Change to another field if needed
-    
-        if ammeter_value is not None:
-        # Insert the extracted value into the BST
-            bst.insert(ammeter_value)
-
-    # Perform an inorder traversal to get the values in sorted order
-    sorted_values = bst.inorder()
-
-    # Print the sorted values
-    return("Sorted Ammeter 2 Values from 'assignment8' topic:", sorted_values)
-
 def query_one():
     fridge_metadata = metadata_collection.find_one({"customAttributes.name": "Second Smart Refrigerator"})
 
