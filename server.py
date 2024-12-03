@@ -106,147 +106,120 @@ def query_one():
 
 def query_two():
     """
-    Retrieves data for the past 24 hours and computes the maximum temperature reading
-    from a specific asset in the 'assignment8' topic.
+    Retrieves water consumption data for a smart dishwasher and calculates the average.
     """
-    asset_metadata = metadata_collection.find_one({"customAttributes.name": "Temperature Sensor"})
+    try:
+        dishwasher = metadata_collection.find_one({"customAttributes.name": "Smart Dishwasher"})
+        if not dishwasher:
+            return "Error: Smart Dishwasher not found in metadata database."
 
-    if asset_metadata:
-        asset_uid = asset_metadata["assetUid"]
-    else:
-        raise Exception("Temperature Sensor asset not found in metadata")
+        parent_asset_uid = dishwasher['assetUid']
+        data = virtual_collection.find({"payload.parent_asset_uid": parent_asset_uid})
 
-    twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
+        water_readings = [
+            float(entry["payload"]["Water Consumption Sensor"])
+            for entry in data if "payload" in entry and "Water Consumption Sensor" in entry["payload"]
+        ]
 
-    query = {
-        "topic": "assignment8",
-        "payload.parent_asset_uid": asset_uid,
-        "time": {"$gte": twenty_four_hours_ago}
-    }
+        if not water_readings:
+            return "No water consumption data found."
 
-    documents = virtual_collection.find(query)
+        avg_consumption = sum(water_readings) / len(water_readings)
+        return f"Average Water Consumption per Cycle: {avg_consumption:.2f} Liters"
 
-    max_temperature = None
-    for document in documents:
-        temperature_value = document['payload'].get('Temperature Sensor')
-
-        if temperature_value is not None:
-            temperature_value = float(temperature_value)
-            if max_temperature is None or temperature_value > max_temperature:
-                max_temperature = temperature_value
-
-    if max_temperature is not None:
-        return f"The maximum temperature reading in the past 24 hours is: {max_temperature}°C"
-    else:
-        return "No temperature readings were found in the past 24 hours."
-
+    except Exception as e:
+        return f"Error in query_two: {e}"
 
 def query_three():
     """
-    Fetches data for the past 7 days to compute the total energy consumption from
-    a specific asset in the 'assignment8' topic.
+    Analyzes electricity consumption by devices and identifies the device with the highest usage.
     """
-    asset_metadata = metadata_collection.find_one({"customAttributes.name": "Energy Meter"})
+    try:
+        # Fetch all metadata to map assetUid to their names
+        metadata = metadata_collection.find()
+        asset_name_map = {entry["assetUid"]: entry["customAttributes"]["name"] for entry in metadata}
 
-    if asset_metadata:
-        asset_uid = asset_metadata["assetUid"]
-    else:
-        raise Exception("Energy Meter asset not found in metadata")
+        # Fetch virtual collection data
+        data = virtual_collection.find()
 
-    seven_days_ago = datetime.now() - timedelta(days=7)
+        # Calculate consumption totals
+        consumption_totals = {}
+        for entry in data:
+            if "payload" in entry:
+                payload = entry["payload"]
+                parent_uid = payload.get("parent_asset_uid")
+                current = (
+                    float(payload.get("Ammeter", 0)) or
+                    float(payload.get("Ammeter 2", 0)) or
+                    float(payload.get("Ammeter (dishwasher)", 0))
+                )
 
-    query = {
-        "topic": "assignment8",
-        "payload.parent_asset_uid": asset_uid,
-        "time": {"$gte": seven_days_ago}
-    }
+                if parent_uid and current:
+                    consumption_totals[parent_uid] = consumption_totals.get(parent_uid, 0) + current
 
-    documents = virtual_collection.find(query)
+        if not consumption_totals:
+            return "No electricity consumption data available."
 
-    total_energy_consumption = 0
-    for document in documents:
-        energy_value = document['payload'].get('Energy Consumption')
+        # Find device with the highest consumption
+        max_device = max(consumption_totals, key=consumption_totals.get)
+        max_consumption = consumption_totals[max_device]
 
-        if energy_value is not None:
-            total_energy_consumption += float(energy_value)
+        # Prepare result with device names
+        result = "Electricity consumption by device (in Amperes):\n"
+        result += "\n".join(
+            f"{asset_name_map.get(uid, uid)}: {total:.2f} Amperes"
+            for uid, total in consumption_totals.items()
+        )
+        result += f"\n\nDevice with the highest consumption: {asset_name_map.get(max_device, max_device)} ({max_consumption:.2f} Amperes)"
+        return result
 
-    if total_energy_consumption > 0:
-        return f"The total energy consumption in the past 7 days is: {total_energy_consumption} kWh"
-    else:
-        return "No energy consumption data was found in the past 7 days."
+    except Exception as e:
+        return f"Error in query_three: {e}"
 
-def main(): 
+def main():
     print("----------BEGINNING SERVER----------\n")
 
-    
-    #server_socket information (ip and port)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print("SERVER INFORMATION")
-    #User will enter IP address and port
     server_ip = str(input("Enter server IP Address: "))
     server_port = int(input("Enter port: "))
-    
-    print()
-
-    #bind server socket ip and port
     server_socket.bind((server_ip, server_port))
-
-    #server begins to listen for client connection
-    print("LISTENING FOR A CONNECTION\n")
     server_socket.listen()
 
-    #once found that connection, save client socket and client address and accept
+    print("LISTENING FOR A CONNECTION\n")
     client_Socket, client_Address = server_socket.accept()
-    print("CONNECTION!")
-    print(f"Connected to ip and address {client_Address} \n")
+    print(f"Connected to IP: {client_Address}\n")
 
-    #try program
-    try: 
-
-        #while client sent choice
-        while True: 
-
-            #recieve query choice from client from server_port
-            query_choice = client_Socket.recv(server_port)
-
-            #if there is no query_choice, close connection, break
-            if not query_choice: 
-                print("CLOSING CONNECTION DUE TO CLIENT INACTIVITY\n")
+    try:
+        while True:
+            query_choice = client_Socket.recv(1024)
+            if not query_choice:
+                print("Client disconnected.")
                 break
 
-            #if there is a quer_choice, decode and print the choice number
             query_choice = int(query_choice.decode('utf-8'))
-            print("User chose: ", query_choice, "\n")
+            print(f"User chose: {query_choice}\n")
 
-            #get query depending on selection
-            if query_choice == 1: 
+            if query_choice == 1:
                 response = query_one()
-                #response = retrieve_all_data()
             elif query_choice == 2:
                 response = query_two()
             elif query_choice == 3:
                 response = query_three()
-            elif query_choice == 5: 
+            elif query_choice == 5:
                 response = example_query()
-            
-            #send query result to client
-            client_Socket.send(bytearray(str(response), encoding='utf-8'))
-            
-    #if try does not work, throw exception
-    except Exception as e: 
-        print(f"Error occurred: {e}\n")
+            else:
+                response = "Invalid query choice."
 
-    #in the end, close client socket connection
-    finally: 
-        client.close()
+            client_Socket.send(response.encode('utf-8'))
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+    finally:
         client_Socket.close()
-        print("CONNECTION CLOSED\n")
-
-    #close server_socket
-    server_socket.close()
-    print("----------END OF SERVER----------\n")
-
+        server_socket.close()
+        print("Connection closed.\n")
 
 if __name__ == "__main__": 
     main()
-
