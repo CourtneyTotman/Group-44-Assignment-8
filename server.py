@@ -105,78 +105,75 @@ def query_one():
         return "No moisture readings were found in the past 3 hours."
 
 def query_two():
-    try:
-        # Retrieve metadata for the smart dishwasher
-        dishwasher = metadata_collection.find_one({"customAttributes.name": "Smart Dishwasher"})
-        
-        if not dishwasher:
-            raise ValueError("Smart Dishwasher not found in metadata database.")
-        
-        parent_asset_uid = dishwasher['assetUid']
+    """
+    Retrieves data for the past 24 hours and computes the maximum temperature reading
+    from a specific asset in the 'assignment8' topic.
+    """
+    asset_metadata = metadata_collection.find_one({"customAttributes.name": "Temperature Sensor"})
 
-        # Query virtual collection for the dishwasher's water consumption data
-        data = virtual_collection.find({"payload.parent_asset_uid": parent_asset_uid})
+    if asset_metadata:
+        asset_uid = asset_metadata["assetUid"]
+    else:
+        raise Exception("Temperature Sensor asset not found in metadata")
 
-        # Extract water consumption readings
-        water_readings = []
-        for entry in data:
-            if "payload" in entry and "Water Consumption Sensor" in entry["payload"]:
-                water_readings.append(float(entry["payload"]["Water Consumption Sensor"]))
+    twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
 
-        if not water_readings:
-            raise ValueError("No water consumption data found.")
+    query = {
+        "topic": "assignment8",
+        "payload.parent_asset_uid": asset_uid,
+        "time": {"$gte": twenty_four_hours_ago}
+    }
 
-        # Calculate the average water consumption
-        avg_consumption = statistics.mean(water_readings)
-        print(f"Average Water Consumption per Cycle: {avg_consumption:.2f} Liters")
+    documents = virtual_collection.find(query)
 
-    except Exception as e:
-        print(f"Error: {e}")
+    max_temperature = None
+    for document in documents:
+        temperature_value = document['payload'].get('Temperature Sensor')
+
+        if temperature_value is not None:
+            temperature_value = float(temperature_value)
+            if max_temperature is None or temperature_value > max_temperature:
+                max_temperature = temperature_value
+
+    if max_temperature is not None:
+        return f"The maximum temperature reading in the past 24 hours is: {max_temperature}°C"
+    else:
+        return "No temperature readings were found in the past 24 hours."
+
 
 def query_three():
-    try:
-        # Query all data points
-        data = virtual_collection.find()
+    """
+    Fetches data for the past 7 days to compute the total energy consumption from
+    a specific asset in the 'assignment8' topic.
+    """
+    asset_metadata = metadata_collection.find_one({"customAttributes.name": "Energy Meter"})
 
-        # Initialize a dictionary to store total consumption for each device
-        consumption_totals = {}
+    if asset_metadata:
+        asset_uid = asset_metadata["assetUid"]
+    else:
+        raise Exception("Energy Meter asset not found in metadata")
 
-        # Process each document
-        for entry in data:
-            if "payload" in entry:
-                payload = entry["payload"]
-                parent_uid = payload.get("parent_asset_uid")
-                current = None
+    seven_days_ago = datetime.now() - timedelta(days=7)
 
-                # Identify the current field for the device
-                if "Ammeter" in payload:
-                    current = float(payload["Ammeter"])
-                elif "Ammeter 2" in payload:
-                    current = float(payload["Ammeter 2"])
-                elif "Ammeter (dishwasher)" in payload:
-                    current = float(payload["Ammeter (dishwasher)"])
+    query = {
+        "topic": "assignment8",
+        "payload.parent_asset_uid": asset_uid,
+        "time": {"$gte": seven_days_ago}
+    }
 
-                # Accumulate the current consumption
-                if current is not None:
-                    if parent_uid not in consumption_totals:
-                        consumption_totals[parent_uid] = 0
-                    consumption_totals[parent_uid] += current
+    documents = virtual_collection.find(query)
 
-        # Find the device with the highest consumption
-        if consumption_totals:
-            max_consumption_device = max(consumption_totals, key=consumption_totals.get)
-            max_consumption = consumption_totals[max_consumption_device]
+    total_energy_consumption = 0
+    for document in documents:
+        energy_value = document['payload'].get('Energy Consumption')
 
-            print("Electricity consumption by device (in Amperes):")
-            for device, total in consumption_totals.items():
-                print(f"Device {device}: {total:.2f} Amperes")
+        if energy_value is not None:
+            total_energy_consumption += float(energy_value)
 
-            print(f"\nDevice with the highest consumption: {max_consumption_device} ({max_consumption:.2f} Amperes)")
-        else:
-            print("No electricity consumption data available.")
-
-    except Exception as e:
-        print(f"Error: {e}")
+    if total_energy_consumption > 0:
+        return f"The total energy consumption in the past 7 days is: {total_energy_consumption} kWh"
+    else:
+        return "No energy consumption data was found in the past 7 days."
 
 def main(): 
     print("----------BEGINNING SERVER----------\n")
