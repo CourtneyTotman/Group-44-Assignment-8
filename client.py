@@ -1,81 +1,74 @@
-
 import socket
 
 def menu(): 
-    print("Please enter a number 1--4")
+    print("\n---*---*---*---*---*---*---*---*---*---*---")
+    print("\nPlease enter a number:")
     print("1. What is the average moisture inside my kitchen fridge in the past three hours?")
     print("2. What is the average water consumption per cycle in my smart dishwasher?")
-    print("3. Which device consumed more electricity among my loT devices (two refrigerators and a dishwasher)?")
+    print("3. Which device consumed more electricity among my IoT devices (two refrigerators and a dishwasher)?")
     print("4. Exit")
     print("5. Example query\n")
-
+    print("---*---*---*---*---*---*---*---*---*---*---")
 
 def main():
     print("----------BEGINNING CLIENT----------\n")
 
     try:
-        #User input server IP and Port
+        # User input server IP and Port
         print("INPUT SERVER INFORMATION")
-
         server_ip = str(input("Enter the server IP address: "))
         server_port = int(input("Enter the server port number: "))
-
         print()
         
-        #create client socket
+        # Create client socket
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-        #try program
+
         try:
-            #connect to client to server
+            # Connect client to server
             client_socket.connect((server_ip, server_port))
             print("CONNECTION!")
-            print(f"Connected to ip: {server_ip}")
-            print(f"Connected to port: {server_port} \n")
+            print(f"Connected to IP: {server_ip}")
+            print(f"Connected to Port: {server_port} \n")
             
-            #while user wants query
+            # While user wants to query
             while True:
-                #user is asked to see menu
-                user_repeat = input("Would you like to see the menu? (y or n)")
-                while (user_repeat != 'y' and user_repeat != 'Y' and user_repeat != 'n' and user_repeat != 'N'):
-                    #user must enter y or n
-                    user_repeat = input("Please enter either y or n")
-                if user_repeat == 'y' or user_repeat == 'Y':
-                    menu()
-                elif user_repeat == 'n' or user_repeat == 'N':
-                    print()
-                
+                # Display the menu directly
+                menu()
 
-                #get user choice
-                user_choice = int(input("ENTER A NUMBER: "))
+                # Get user choice
+                try:
+                    user_choice = int(input("\nENTER A NUMBER: "))
+                except ValueError:
+                    print("Invalid input. Please enter a number between 1 and 5.")
+                    continue
 
-                #menu choice : exit
+                # Menu choice: Exit
                 if user_choice == 4: 
+                    print("\nExiting...\n")
                     break
 
-                #incorrect menu choice ( outside of 1 - 4 )
-                elif user_choice != 1 and user_choice != 2 and user_choice != 3 and user_choice != 5: 
-                    print("Sorry, this query cannot be processed. Please select a query 1 - 3 or 4 to exit.")
+                # Incorrect menu choice (outside of 1 - 3 or 5)
+                elif user_choice not in [1, 2, 3, 5]: 
+                    print("Sorry, this query cannot be processed. Please select a query 1 - 3, 5, or 4 to exit.")
 
-                #user chose a number between 1 - 3
+                # User chose a valid option
                 else:
-                    #send server user choice
+                    # Send user choice to the server
                     client_socket.send(bytearray(str(user_choice), encoding='utf-8'))
-                    #wait for server response. then recieve from 3015
+                    # Wait for server response
                     server_response = client_socket.recv(3015)
-                    #print server response
-                    print(f"SERVER RESPONSE: {server_response.decode('utf-8')}")                
-                
+                    # Print server response
+                    print(f"SERVER RESPONSE:\n\n{server_response.decode('utf-8')}")                
 
-            #close socket once user is done
+            # Close socket once user is done
             client_socket.close()
             print("\nCONNECTION CLOSED\n")
         
-        #if client cannot connect to server, throw exception
+        # If client cannot connect to server, throw exception
         except (socket.gaierror, socket.error) as e:
             print(f"\nERROR: Server unable to connect. {e}\n")
     
-    #if user inputs invalid port number, have user try again
+    # If user inputs invalid port number, handle exception
     except ValueError:
         print("\nERROR: Invalid port number\nPlease enter a valid integer.\n")
 
