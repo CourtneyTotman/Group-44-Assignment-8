@@ -134,7 +134,49 @@ def query_two():
         print(f"Error: {e}")
 
 def query_three():
-    return "You selected 3"
+    try:
+        # Query all data points
+        data = virtual_collection.find()
+
+        # Initialize a dictionary to store total consumption for each device
+        consumption_totals = {}
+
+        # Process each document
+        for entry in data:
+            if "payload" in entry:
+                payload = entry["payload"]
+                parent_uid = payload.get("parent_asset_uid")
+                current = None
+
+                # Identify the current field for the device
+                if "Ammeter" in payload:
+                    current = float(payload["Ammeter"])
+                elif "Ammeter 2" in payload:
+                    current = float(payload["Ammeter 2"])
+                elif "Ammeter (dishwasher)" in payload:
+                    current = float(payload["Ammeter (dishwasher)"])
+
+                # Accumulate the current consumption
+                if current is not None:
+                    if parent_uid not in consumption_totals:
+                        consumption_totals[parent_uid] = 0
+                    consumption_totals[parent_uid] += current
+
+        # Find the device with the highest consumption
+        if consumption_totals:
+            max_consumption_device = max(consumption_totals, key=consumption_totals.get)
+            max_consumption = consumption_totals[max_consumption_device]
+
+            print("Electricity consumption by device (in Amperes):")
+            for device, total in consumption_totals.items():
+                print(f"Device {device}: {total:.2f} Amperes")
+
+            print(f"\nDevice with the highest consumption: {max_consumption_device} ({max_consumption:.2f} Amperes)")
+        else:
+            print("No electricity consumption data available.")
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 def main(): 
     print("----------BEGINNING SERVER----------\n")
