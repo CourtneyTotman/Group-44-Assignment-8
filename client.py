@@ -17,11 +17,8 @@ def main():
         #User input server IP and Port
         print("INPUT SERVER INFORMATION")
 
-        #server_ip = str(input("Enter the server IP address: "))
-        #server_port = int(input("Enter the server port number: "))
-
-        server_ip = "10.39.18.43"
-        server_port = 1024
+        server_ip = str(input("Enter the server IP address: "))
+        server_port = int(input("Enter the server port number: "))
 
         print()
         

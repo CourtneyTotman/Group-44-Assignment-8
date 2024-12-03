@@ -2,6 +2,7 @@ from doctest import Example
 import socket
 import pymongo
 from pymongo import MongoClient
+from datetime import datetime, timedelta
 
 CONNECTION_STRING = f"mongodb+srv://group44assignment8:group44assignment8@group44assignment8.ymcwi.mongodb.net/"
 DATABASE_NAME = "test"
@@ -10,8 +11,8 @@ COLLECTION_METADATA = "assignment8_metadata"
 
 client = MongoClient(CONNECTION_STRING)
 db = client[DATABASE_NAME]
-virtual = db[COLLECTION_VIRTUAL]
-metadata = db[COLLECTION_METADATA]
+virtual_collection = db[COLLECTION_VIRTUAL]
+metadata_collection = db[COLLECTION_METADATA]
 
 class Node: 
     def __init__(self, key):
@@ -41,20 +42,17 @@ class BinarySearchTree:
             else: 
                 self._insert_recursive(node.right, key)
 
-    def inorder(self):
-        elements = []
-        self._inorder_recursive(self.root, elements)
-        return elements
-
-    def _inorder_recursive(self, node, elements):
+    def in_order_traversal(self, node):
+        result = []
         if node: 
-            self._inorder_recursive(node.left, elements)
-            elements.append(node.val)
-            self._inorder_recursive(node.right, elements)
+            result.extend(self.in_order_traversal(node.left))
+            result.append(node.val)
+            result.extend(self.in_order_traversal(node.right))
+        return result
 
 def example_query():
     query = {"topic": "assignment8"}
-    documents = virtual.find(query)
+    documents = virtual_collection.find(query)
     bst = BinarySearchTree()
     for document in documents:
     # Extract the desired value (e.g., "Ammeter 2" from the payload)
@@ -71,7 +69,40 @@ def example_query():
     return("Sorted Ammeter 2 Values from 'assignment8' topic:", sorted_values)
 
 def query_one():
-    return "You selected 1"
+    fridge_metadata = metadata_collection.find_one({"customAttributes.name": "Second Smart Refrigerator"})
+
+    if fridge_metadata:
+        fridge_asset_uid = fridge_metadata["assetUid"]
+    else: 
+        raise Exception("Fridge asset not found in metadata")
+
+    three_hours_ago = datetime.now() - timedelta(hours = 3)
+
+    query = {
+        "topic": "assignment8",
+        "payload.parent_asset_uid": fridge_asset_uid, 
+        "time":  {"$gte": three_hours_ago}
+        }
+
+    documents = virtual_collection.find(query)
+
+    query_one_bst = BinarySearchTree()
+
+    for document in documents:
+        moisture_value = document['payload'].get('Moisture meter 2')
+
+        if moisture_value is not None: 
+            moisture_value = float(moisture_value)
+            query_one_bst.insert(moisture_value)
+
+    moisture_values = query_one_bst.in_order_traversal(query_one_bst.root)
+
+    if moisture_values: 
+        average_moisture = sum(moisture_values) / len(moisture_values)
+        return f"The average moisture inside the kitchen fridge in the past three hours is: {average_moisture} %"
+
+    else: 
+        return "No moisture readings were found in the past 3 hours."
 
 def query_two():
     return "You selected 2"
@@ -87,10 +118,8 @@ def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print("SERVER INFORMATION")
     #User will enter IP address and port
-    #server_ip = str(input("Enter server IP Address: "))
-    #server_port = int(input("Enter port: "))
-    server_ip = "10.39.18.43"
-    server_port = 1024
+    server_ip = str(input("Enter server IP Address: "))
+    server_port = int(input("Enter port: "))
     
     print()
 
