@@ -105,7 +105,33 @@ def query_one():
         return "No moisture readings were found in the past 3 hours."
 
 def query_two():
-    return "You selected 2"
+    try:
+        # Retrieve metadata for the smart dishwasher
+        dishwasher = metadata_collection.find_one({"customAttributes.name": "Smart Dishwasher"})
+        
+        if not dishwasher:
+            raise ValueError("Smart Dishwasher not found in metadata database.")
+        
+        parent_asset_uid = dishwasher['assetUid']
+
+        # Query virtual collection for the dishwasher's water consumption data
+        data = virtual_collection.find({"payload.parent_asset_uid": parent_asset_uid})
+
+        # Extract water consumption readings
+        water_readings = []
+        for entry in data:
+            if "payload" in entry and "Water Consumption Sensor" in entry["payload"]:
+                water_readings.append(float(entry["payload"]["Water Consumption Sensor"]))
+
+        if not water_readings:
+            raise ValueError("No water consumption data found.")
+
+        # Calculate the average water consumption
+        avg_consumption = statistics.mean(water_readings)
+        print(f"Average Water Consumption per Cycle: {avg_consumption:.2f} Liters")
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 def query_three():
     return "You selected 3"
