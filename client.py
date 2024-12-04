@@ -38,7 +38,7 @@ def main():
                 try:
                     user_choice = int(input("\nENTER A NUMBER: "))
                 except ValueError:
-                    print("Invalid input. Please enter a number between 1 and 5.")
+                    print("Invalid input. Please enter a number between 1 and 4.")
                     continue
 
                 # Menu choice: Exit
@@ -46,7 +46,8 @@ def main():
                     print("\nExiting...\n")
                     break
 
-                # Incorrect menu choice (outside of 1 - 3 or 5)
+                # Incorrect menu choice (outside of 1 - 4)
+
                 elif user_choice not in [1, 2, 3]: 
                     print("Sorry, this query cannot be processed. Please select a query 1 - 3, or 4 to exit.")
 

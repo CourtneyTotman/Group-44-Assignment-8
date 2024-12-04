@@ -1,25 +1,29 @@
-from doctest import Example
+#from doctest import Example
 import socket
 import pymongo
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
+#Connecting to MongoDB Atlas
 CONNECTION_STRING = f"mongodb+srv://group44assignment8:group44assignment8@group44assignment8.ymcwi.mongodb.net/"
 DATABASE_NAME = "test"
 COLLECTION_VIRTUAL= "assignment8_virtual"
 COLLECTION_METADATA = "assignment8_metadata"
 
+#Connecting to database
 client = MongoClient(CONNECTION_STRING)
 db = client[DATABASE_NAME]
 virtual_collection = db[COLLECTION_VIRTUAL]
 metadata_collection = db[COLLECTION_METADATA]
 
+#Node for Binary Search Tree
 class Node: 
     def __init__(self, key):
         self.left = None
         self.right = None
         self.val = key 
 
+#Binary Search Tree including the features: insert, _insert_recursive, and in_order_traversal
 class BinarySearchTree:
     def __init__(self):
         self.root = None 
@@ -51,28 +55,35 @@ class BinarySearchTree:
         return result
 
 
+#Find the average moisture inside the kitchen fridge in the past three hours
 def query_one():
-    fridge_metadata = metadata_collection.find_one({"customAttributes.name": "Second Smart Refrigerator"})
+    #find the dataset of the smart fridge's metadata
+    fridge_metadata = metadata_collection.find_one({"customAttributes.name": "Smart Refrigerator"})
 
+    #find the assetUid of the fridge
     if fridge_metadata:
         fridge_asset_uid = fridge_metadata["assetUid"]
     else: 
         raise Exception("Fridge asset not found in metadata")
 
+    #what is the time 3 hours ago
     three_hours_ago = datetime.now() - timedelta(hours = 3)
-
+    
+    #find the datasets that match fridge's asset Uid in the past 3 hours
     query = {
         "topic": "assignment8",
         "payload.parent_asset_uid": fridge_asset_uid, 
         "time":  {"$gte": three_hours_ago}
         }
 
+    #collect all the datasets that match the query
     documents = virtual_collection.find(query)
 
     query_one_bst = BinarySearchTree()
 
+    #in each dataset, collect the moisture meter reading and place into binary search tree
     for document in documents:
-        moisture_value = document['payload'].get('Moisture meter 2')
+        moisture_value = document['payload'].get('Moisture Meter - Moisture meter')
 
         if moisture_value is not None: 
             moisture_value = float(moisture_value)
@@ -80,25 +91,33 @@ def query_one():
 
     moisture_values = query_one_bst.in_order_traversal(query_one_bst.root)
 
+    #using the binary search tree of all readings, find the average (sum of all readings / length of binary search tree)
     if moisture_values: 
         average_moisture = sum(moisture_values) / len(moisture_values)
+        #return string + average value to client
         return f"The average moisture inside the kitchen fridge in the past three hours is: {average_moisture} %"
 
     else: 
         return "No moisture readings were found in the past 3 hours."
+
 
 def query_two():
     """
     Retrieves water consumption data for a smart dishwasher and calculates the average.
     """
     try:
+        #find the dataset from metadata that matches smart dishwasher
         dishwasher = metadata_collection.find_one({"customAttributes.name": "Smart Dishwasher"})
         if not dishwasher:
             return "Error: Smart Dishwasher not found in metadata database."
 
+        #find the asset Uid of the dishwasher
         parent_asset_uid = dishwasher['assetUid']
+
+        #find all datasets in virtual that match the asset Uid of dishwasher
         data = virtual_collection.find({"payload.parent_asset_uid": parent_asset_uid})
 
+        #get the value of the water consumption sensor of each reading
         water_readings = [
             float(entry["payload"]["Water Consumption Sensor"])
             for entry in data if "payload" in entry and "Water Consumption Sensor" in entry["payload"]
@@ -107,11 +126,16 @@ def query_two():
         if not water_readings:
             return "No water consumption data found."
 
+        #get the average (sum of all readings / the number of readings of water consumption sensor)
         avg_consumption = sum(water_readings) / len(water_readings)
+
+        #return string + average value to the client
         return f"Average Water Consumption per Cycle: {avg_consumption:.2f} Liters"
 
     except Exception as e:
         return f"Error in query_two: {e}"
+
+
 
 def query_three():
     """
@@ -169,7 +193,7 @@ def main():
     server_socket.bind((server_ip, server_port))
     server_socket.listen()
 
-    print("LISTENING FOR A CONNECTION\n")
+    print("\nLISTENING FOR A CONNECTION\n")
     client_Socket, client_Address = server_socket.accept()
     print(f"Connected to IP: {client_Address}\n")
 
@@ -201,6 +225,7 @@ def main():
         client_Socket.close()
         server_socket.close()
         print("Connection closed.\n")
+        print("----------END OF SERVER----------\n")
 
 if __name__ == "__main__": 
     main()
