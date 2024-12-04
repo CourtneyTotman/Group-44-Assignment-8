@@ -47,8 +47,8 @@ def main():
                     break
 
                 # Incorrect menu choice (outside of 1 - 3 or 5)
-                elif user_choice not in [1, 2, 3, 5]: 
-                    print("Sorry, this query cannot be processed. Please select a query 1 - 3, 5, or 4 to exit.")
+                elif user_choice not in [1, 2, 3]: 
+                    print("Sorry, this query cannot be processed. Please select a query 1 - 3, or 4 to exit.")
 
                 # User chose a valid option
                 else:

@@ -50,6 +50,7 @@ class BinarySearchTree:
             result.extend(self.in_order_traversal(node.right))
         return result
 
+
 def query_one():
     fridge_metadata = metadata_collection.find_one({"customAttributes.name": "Second Smart Refrigerator"})
 
@@ -188,8 +189,6 @@ def main():
                 response = query_two()
             elif query_choice == 3:
                 response = query_three()
-            elif query_choice == 5:
-                response = example_query()
             else:
                 response = "Invalid query choice."
 
